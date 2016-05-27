@@ -1,0 +1,41 @@
+<!-- Copyright (c) 2010 - 2015 Sipcentric Ltd. Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="bootstrap/css/bootstrap.css" rel="stylesheet" media="screen">
+    <style>
+    #icon {width: 48px; float: right;}
+    #callModal {width: 400px;
+                margin-left: -200px}
+    </style>
+    <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+  </head>
+  <body>
+
+    <div id="container" class="container">
+
+      <div id="callModal" class="modal hide fade">
+        <div class="modal-header">
+          <img id="icon" src="images/icon48.png"> <h4 id="banner">Nimvelo</h4>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="number" placeholder="Number" maxlenght="25">
+          <label class="checkbox"><input id="dialerWithhold" type="checkbox"> <small>Withhold Caller ID</small></label>
+          <p class="muted"><small>Click the 'dial' button below to call this number from your extension. You can edit the number before dialing or click 'close' to go back.</small></p>
+          <div id="notification"></div>
+        </div>
+        <div class="modal-footer">
+          <a href="#" id="btnClose" class="btn">Close</a>
+          <a href="#" id="btnDial" class="btn btn-info">Dial</a>
+        </div>
+      </div>
+
+    </div>
+
+    <script src="jquery/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="call.js"></script>
+
+  </body>
+</html>

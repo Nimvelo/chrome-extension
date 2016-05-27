@@ -1,0 +1,385 @@
+<!-- Copyright (c) 2010 - 2015 Sipcentric Ltd. Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php -->
+
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <link href="bootstrap/css/bootstrap.css" rel="stylesheet" media="screen">
+    <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="jquery/jquery-ui-1.10.0.custom.min.css" rel="stylesheet" type="text/css">
+    <link href="style.css" rel="stylesheet" media="screen" type="text/css" />
+  </head>
+
+  <body>
+
+    <div id="mainMenu" class="navbar navbar-static-top navbar-inverse">
+      <div class="navbar-inner">
+        <ul class="nav pull-right">
+          <li id="menuSettings"><a id="menuSettings" href="#"><i class="icon-cog icon-white"></i></a></li>
+        </ul>
+        <ul class="nav">
+          <li id="menuDialer"><a id="menuDialer" href="/main.html"><i class="icon-home icon-white" alt="Dialer"></i></a></li>
+          <li id="menuBook"><a id="menuBook" href="#"><i class="icon-book icon-white" alt="Phone Book"></i></a></li>
+          <li id="menuMessages"><a id="menuMessages" href="#"><i class="icon-envelope icon-white" alt="SMS Messages"></i></a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="subMenu" class="navbar navbar-static-top">
+      <div class="navbar-inner">
+        <ul class="nav pull-right">
+          <button type="button" id="logout" class="btn btn-mini">Logout</button>
+        </ul>
+        <ul class="nav">
+          <li><p id="bannerName" class="navbar-text">Nimvelo</p></li>
+        </ul>
+      </div>
+    </div>
+
+    <br />
+
+    <div id="container" class="container">
+
+    <div id="loading" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-body">
+        <h3>Loading...</h3>
+      </div>
+    </div>
+
+    <div id="blockLogin" style="display: none;">
+
+       <form>
+        <fieldset>
+
+          <legend>Account Login</legend>
+
+          <p>Enter your Nimvelo username and password below.</p>
+
+          <input type="text" id="username" placeholder="Username">
+          <input type="password" id="password" placeholder="Password">
+          <button type="submit" id="login" class="btn btn-info">Login</button>
+
+        </fieldset>
+      </form>
+
+    </div>
+
+    <div id="blockWelcome" style="display: none;">
+
+      <form>
+        <fieldset>
+          <legend><h3>Hey there!</h3></legend>
+          <p>Thanks for installing our Chrome plugin. We are currently testing this extension and adding new features.</p>
+          <p>You will need your account username and password. If you have any problems, please email hello@nimvelo.com.</p>
+          <p>To get started click the "Next" button below!</p>
+          <br /><button type="submit" id="welcomeNext" class="btn btn-info">Next <i class="icon-chevron-right icon-white"></i></button>
+        </fieldset>
+      </form>
+
+    </div>
+
+    <div id="blockDialer" style="display: none;">
+      <form>
+          <legend class="no-margin">Number Dialler</legend>
+          <div id="dialerNumberGroup" class="control-group">
+            <input type="text" id="dialerNumber" class="error" placeholder="Enter a number / search contacts">
+          </div>
+            <label class="checkbox"><input id="dialerWithhold" type="checkbox"> <small>Withhold Caller ID</small></label>
+          <small id="dialerInfo" class="text-info"></small>
+
+          <div id="numberDialerButtons">
+            <button type="submit" id="dial" class="btn btn-info">Dial <i class="icon-chevron-right icon-white"></i></button>
+            <button id="recent" class="btn" type="button" alt="Recent Calls"><i class="icon-align-justify"></i></button>
+          </div>
+      </form>
+
+    </div>
+
+    <div id="blockRecent" style="display: none;">
+
+      <legend><button id="recentBack" class="btn btn-mini" type="button"><i class="icon-chevron-left"></i></button> Recent Calls</legend>
+      <div id="tableRecentWrapper">
+      <table id="tableRecent" class="table table-striped table-condensed">
+      <tr><td></td></tr>
+      </table>
+      </div>
+
+    </div>
+
+    <div id="blockBook" style="display: none;">
+
+      <legend>Phone Book (<span id="contactCount">0</span>) <button id="contactsRefresh" class="btn btn-mini" type="button"><i class="icon-refresh"></i></button></legend>
+
+      <div id="contacts">
+        <table class="table table-condensed table-striped">
+          <tbody id="tableContacts">
+            <tr><td><small>Loading...</small></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><button id="addContact" class="btn btn-small btn-info" type="button">Add <i class="icon-plus icon-white"></i></button></p>
+
+    </div>
+
+    <div id="contactModal" class="modal hide fade" style="display: none;">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 id="contactModalBanner">Add Contact</h4>
+      </div>
+      <div class="modal-body">
+        <form>
+        <fieldset>
+          <div id="contactEditNameGroup" class="control-group">
+            <span class="help-block"><small>Contact Name</small></span>
+            <input id="contactEditName" type="text" class="input-medium" maxlength="20" placeholder="Example Contact">
+          </div>
+          <div id="contactEditNumberGroup" class="control-group">
+            <span class="help-block"><small>Phone Number</small></span>
+            <input id="contactEditNumber" type="text" class="input-medium" maxlength="15" placeholder="01212854400">
+          </div>
+          <div id="contactEditSpeedDialGroup" class="control-group">
+            <span class="help-block"><small>Speed Dial (Optional)</small></span>
+            <input id="contactEditSpeedDial" type="text" class="input-small" maxlength="4" placeholder="123">
+          </div>
+        </form>
+        </fieldset>
+        <div id="contactModalNotification"></div>
+      </div>
+      <div class="modal-footer">
+        <a href="#" id="contactModalDelete" class="btn btn-small btn-inverse">Delete</a>
+        <a href="#" id="contactModalUpdate" class="btn btn-small btn-info">Update</a>
+        <a href="#" id="contactModalSave" class="btn btn-small btn-info">Save</a>
+      </div>
+    </div>
+
+    <div id="blockSMS" style="display: none;">
+
+      <legend>SMS Messaging</legend>
+      <div id="blockSMSTableWrapper">
+      <table class="table table-condensed table-striped">
+        <tbody id="blockSMSTable">
+          <tr><td><small>Loading...</small></td></tr>
+        </tbody>
+       </table>
+      </div>
+
+      <form>
+        <button type="submit" id="newSMS" class="btn btn-small btn-info">New <i class="icon-plus icon-white"></i></button>
+      </form>
+
+    </div>
+
+    <div id="blockSMSThread" style="display: none;">
+    <div id="SMSConversationTitle">Conversation with:</div>
+      <legend>
+      <div id="blockSMSMessageNumber"><button id="blockSMSThreadBack" class="btn btn-mini" type="button"><i class="icon-chevron-left"></i></button><span class="" id="threadNumber"></span></div></legend>
+
+      <div id="SMSThreadTableWrapper">
+      <table id="SMSMessageTable" class="table table-condensed table-striped">
+        <tbody id="smsMessageTableBody">
+          <tr><td><small>Loading...</small></td></tr>
+        </tbody>
+       </table>
+      </div>
+
+      <div id="SMSThreadReply">
+        <div class="input-append">
+          <input id="SMSThreadReplyMessage" class="span2" id="appendedInputButton" type="text">
+          <button id="SMSThreadReplySend" class="btn" type="button">Send</button>
+        </div>
+        <p class="infoText text-info"><small id="SMSThreadReplyInfo"></small></p>
+        <div id="smsThreadFrom"></div>
+      </div>
+
+    </div>
+
+    <div id="newSMSModal" class="modal hide fade" style="display: none;">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4>New SMS</h4>
+      </div>
+      <div class="modal-body">
+
+      <form>
+        <fieldset>
+          <div id="smsNumberGroup" class="control-group">
+            <!-- <div class="input-prepend"> -->
+              <!-- <span class="add-on" style="width: 33px; text-align: left;">To</span> -->
+              <div class="modalFormStyle">Recipient</div>
+              <input id="smsNumber" type="text" placeholder="Number" size="21">
+            <!-- </div> -->
+          </div>
+
+          <div id="smsFromGroup" class="control-group">
+            <div class="modalFormStyle">Send From</div>
+            <select id="newSMSFrom">
+              <option value="notset">From</option>
+            </select>
+          </div>
+
+          <div id="smsMessageGroup" class="control-group">
+            <textarea id="smsMessage" class="input-large" placeholder="Message" rows="3"></textarea>
+          </div>
+
+          <p><small id="smsCost" class="text-info"></small></p>
+        </fieldset>
+      </form>
+
+        <div id="newSMSModalNotification"></div>
+      </div>
+      <div class="modal-footer">
+        <a href="#" id="newSMSSend" class="btn btn-small btn-info">Send</a>
+      </div>
+    </div>
+
+    <div id="newSMSModalNoNumbers" class="modal hide fade" style="display: none;">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4>New SMS</h4>
+      </div>
+      <div class="modal-body">
+        <p>You must have at least one SMS enabled number on your account.</p>
+        <p>Please contact us if you require assistance.</p>
+        <p>hello@nimvelo.com</p>
+      </div>
+      <!--       <div class="modal-footer">
+        <a href="#" id="newSMSSend" class="btn btn-small btn-info">Send</a>
+      </div> -->
+    </div>
+
+    <div id="notifyModal" class="modal hide fade" style="display: none;">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4>Notifications</h4>
+      </div>
+      <div class="modal-body">
+
+        <p><small>Configure your notification settings here.</small></p>
+
+        <p><div class="btn-group">
+          <button id="callNotifyOn" class="btn btn-mini">On</button>
+          <button id="callNotifyOff" class="btn btn-mini">Off</button>
+        </div>
+        <small>Incoming calls.</small></p>
+
+        <p><div class="btn-group">
+          <button id="smsNotifyOn" class="btn btn-mini">On</button>
+          <button id="smsNotifyOff" class="btn btn-mini">Off</button>
+        </div>
+        <small>New SMS received.</small></p>
+
+        <p><div id="callerIdLookup" class="control-group">
+          <small>Caller ID Lookup Source</small>
+          <input type="text" id="callLookupURL" placeholder="http://sample.com/n?=[callerid]" class="input-large"></input>
+          <small class="muted" id="sampleLookupURL"></small>
+          <br /><small>Place your Caller ID Lookup URL above.<br />Use [callerid] to access the caller ID.</small></p>
+        </div></p>
+
+        <!-- <p><div id="notifyTimeInputGroup" class="control-group"><input type="text" id="notifyTimeInput" class="input-tiny"></input> <small>Notification time (1-20 Sec)</small></div></p> -->
+
+        <button id="notifyStatus" class="btn btn-mini">Not Connected</button>
+
+      </div>
+      <div class="modal-footer">
+        <a href="#" id="notifySave" class="btn btn-small btn-info">Save</a>
+      </div>
+    </div>
+
+    <div id="poppingModal" class="modal hide fade" style="display: none;">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4>Screen Popping</h4>
+      </div>
+      <div class="modal-body">
+
+        <p><div class="btn-group">
+          <button id="callPopOn" class="btn btn-mini">On</button>
+          <button id="callPopOff" class="btn btn-mini">Off</button>
+        </div>
+        <small>Incoming calls.</small></p>
+
+        <p><input type="text" id="poppingURL" placeholder="http://sample.com/n?=[callerid]" class="input-large"></input>
+
+        <small class="muted" id="sampleURL"></small>
+
+        <br /><small>Place your application URL above.<br />Use [callerid] to access the caller ID.</small></p>
+
+      </div>
+      <div class="modal-footer">
+        <a href="#" id="poppingSave" class="btn btn-small btn-info">Save</a>
+      </div>
+    </div>
+
+    <div id="blockSettings" style="display: none;">
+
+      <form>
+        <fieldset>
+          <legend>Preferences</legend>
+
+          <p>Select your extension:</p>
+
+          <select id="extensions">
+            <option value="notset">Extension</option>
+          </select>
+
+          <br /><br /><button type="submit" id="save" class="btn btn-small btn-info">Save <i class="icon-ok icon-white"></i></button>
+        </fieldset>
+      </form>
+
+      <div id="settings">
+
+      <legend>Settings</legend>
+
+      <p>
+        <button id="showNotifySettings" class="btn btn-mini" type="button">Notification Settings</button>
+        <button id="showPoppingSettings" class="btn btn-mini" type="button">Screen Popping</button>
+      </p>
+
+      <p>
+        <div class="btn-group">
+          <button id="clickableOn" class="btn btn-mini">On</button>
+          <button id="clickableOff" class="btn btn-mini">Off</button>
+        </div>
+        <small>Clickable numbers.</small>
+      </p>
+      <p>
+        <div class="btn-group">
+          <button id="autoUpdateOn" class="btn btn-mini">On</button>
+          <button id="autoUpdateOff" class="btn btn-mini">Off</button>
+        </div>
+        <small>Auto-update phone book.</small>
+      </p>
+      <p>
+        <div class="controls controls-row">
+        <button type="submit" id="reset" class="btn btn-mini">Reset All</button>
+        <small id="resetInfo" class="text-warning">This will reset all data!</small>
+        </div>
+      </p>
+      <p><small id="helpLink" class="help">Click here for help</small></p>
+      <small id="version" class="muted">Version:</small>
+      </div>
+
+    </div>
+
+    <div id="notification"></div>
+
+    </div>
+
+    <div id="loadingModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-body">
+        <p class="lead">Loading…</p>
+      </div>
+    </div>
+
+    <script src="jquery/jquery.min.js"></script>
+    <script src="jquery/jquery-ui-1.10.0.custom.min.js"></script>
+    <script src="jquery/moment.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+
+    <script src="js/request.js"></script>
+    <script src="js/main.js"></script>
+
+  </body>
+
+</html>
