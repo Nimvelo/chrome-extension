@@ -490,7 +490,7 @@ function getExtensions() {
   var handle = new Request("/customers/me/endpoints");
 
   handle.params['type'] = "Phone";
-  handle.pageSize(100);
+  handle.pageSize(200);
 
   handle.loading(function(state){
     loadingState(state);
@@ -534,7 +534,7 @@ function getRecent() {
 
   var handle = new Request("/customers/me/calls");
 
-  handle.pageSize(100);
+  handle.pageSize(200);
   handle.params['includeLocal'] = true;
 
   handle.failed(function(response, status){
@@ -634,7 +634,7 @@ function getSMSMessages() {
 
   smsMessages = [];
 
-  url = localStorage['baseURL'] + '/customers/me/sms?pageSize=100&page=1';
+  url = localStorage['baseURL'] + '/customers/me/sms?pageSize=200&page=1';
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.open("GET", url, false);
   var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
