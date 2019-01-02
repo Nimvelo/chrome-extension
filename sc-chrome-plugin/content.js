@@ -32,6 +32,14 @@ function linkNumbers() {
   var extension = chrome.extension.getURL("call.html");
   var pattern = /((?:0|\+44)(?:[0-9]|\(|-|\)|\s(?:[0-9]|\()){8,20})/g;
   $('body').find(':not(textarea,input,a,pre,code)').replaceText( pattern, '<a title="Click to call this number" href="' + extension + '?number=$1" target="_blank">$1<\/a>' );
+
+  $.initialize('a[href^="tel:"], a[href^="callto:"]', function () {
+    console.log('found link ' + this.href);
+    var number = this.href.replace(/\D/g, '');
+
+    $(this).attr('href', extension + '?number=' + number);
+    $(this).attr('target', '_blank');
+  });
 }
 
 $(document).ready(function() {
