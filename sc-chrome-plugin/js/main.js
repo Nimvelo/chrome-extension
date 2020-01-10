@@ -28,6 +28,7 @@ function showWelcome() {
 function showDialer() {
   hide();
   showMenu();
+  getOutgoingNumbers();
   numbersAutoComplete("#dialerNumber", true, true);
   $('#blockDialer').fadeIn(400);
   $("#menuDialer").addClass("active");
@@ -248,8 +249,13 @@ function saveSettings() {
 	if ( $('#extensions').val() != "notset" ) {
     var extension = $('#extensions').val();
 
+    var shortNumber = localStorage[localStorage['loginUsername'] + '_' + $('#extensions').val()];
+
+    var selectedExtension = JSON.parse(localStorage[localStorage['loginUsername'] + '_localExtensions']).find(x => x.value === shortNumber);
+
     localStorage[localStorage['loginUsername'] + '_prefMainExtension'] = extension;
-    localStorage[localStorage['loginUsername'] + '_prefMainExtensionShort'] = localStorage[localStorage['loginUsername'] + '_' + $('#extensions').val()]
+    localStorage[localStorage['loginUsername'] + '_prefMainExtensionShort'] = shortNumber;
+    localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId'] = selectedExtension.defaultCallerId;
 
     // Set up is done, so we set the _loginSetup value to done
     localStorage[localStorage['loginUsername'] + "_loginSetup"] = 'done';
@@ -438,8 +444,9 @@ function dial() {
       var withhold = 0;
     }
 
+    var selectedCallerId = $('#callerIdPicker').val();
     // We send the number to the background page (background.js) as we use this in some other places as well
-    chrome.extension.sendMessage({number: call, numberHold: withhold}, function(response) {
+    chrome.extension.sendMessage({number: call, numberHold: withhold, callerId: selectedCallerId}, function(response) {
       // Status is the numeric code of the request
       status = response[0];
       // The mesage contains any validation errors etc
@@ -503,7 +510,7 @@ function getExtensions() {
 
       lable = item['name'] + ' - ' + item['shortNumber'];
       value = item['shortNumber'];
-      localExtensions.push({label: lable, value: value, category: "Extensions"});
+      localExtensions.push({label: lable, value: value, category: "Extensions", defaultCallerId: item['defaultCallerId']});
 
       localStorage[localStorage['loginUsername'] + '_' + item['uri']] = item['shortNumber'];
 
@@ -824,15 +831,26 @@ function getOutgoingNumbers(type) {
       if (xmlhttp.status === 200) {
         obj = JSON.parse(xmlhttp.responseText);
 
+         // Remove any existing options
+        $('#callerIdPicker').find('option').remove();
+
+        localStorage[localStorage['loginUsername'] + '_outgoingCallerIds'] = JSON.stringify(obj.items);
+
         for (var item in obj.items) {
+          var label = obj.items[item].number;
+          var value = obj.items[item].number;
+
           if (obj.items[item].allowCalls == true) {
-            label = obj.items[item].number;
-            value = obj.items[item].number;
             allowCalls.push({label: label, value: value, category: "Numbers"});
-          }
-          if (obj.items[item].allowSms == true) {
-            label = obj.items[item].number;
-            value = obj.items[item].number;
+
+            var newItem = $("<option></option>").attr("value",item['uri']).text(label);
+
+            if (obj.items[item].uri == localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId']) {
+              newItem.attr("selected", "selected");
+            }
+            $('#callerIdPicker').append(newItem);
+
+          } else if (obj.items[item].allowSms == true) {
             allowSMS.push({label: label, value: value, category: "SMS Enabled"});
           }
         }
