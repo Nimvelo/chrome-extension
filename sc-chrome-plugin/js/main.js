@@ -850,8 +850,9 @@ function getOutgoingNumbers(type) {
               newItem.attr("selected", "selected");
             }
             $('#callerIdPicker').append(newItem);
+          }
 
-          } else if (itemObj.allowSms == true) {
+          if (itemObj.allowSms) {
             allowSMS.push({label: label, value: value, category: "SMS Enabled"});
           }
         }
