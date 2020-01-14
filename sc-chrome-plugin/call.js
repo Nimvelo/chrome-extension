@@ -24,7 +24,9 @@ function dial() {
 
     var call = $('#number').val();
 
-    chrome.extension.sendMessage({number: call, numberHold: withhold}, function(response) {
+    var selectedCallerId = $('#callerIdPicker').val();
+
+    chrome.extension.sendMessage({number: call, numberHold: withhold, callerId: selectedCallerId}, function(response) {
       status = response[0];
       message = response[1];
 
@@ -99,4 +101,21 @@ $(document).ready(function() {
     $('#number').val(number);
   }
 
+  try {
+    var outgoingCallerIds = localStorage[localStorage['loginUsername'] + '_outgoingCallerIds'];
+
+    JSON.parse(outgoingCallerIds).forEach((outgoingCallerId) => {
+      if (!outgoingCallerId.allowCalls) return;
+
+      var newItem = $("<option></option>").attr("value",outgoingCallerId.uri).text(outgoingCallerId.number);
+
+      if (outgoingCallerId.uri == localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId']) {
+        newItem.attr("selected", "selected");
+      }
+      $('#callerIdPicker').append(newItem);
+    });
+
+  } catch (err) {
+    console.error('Error getting outgoingCallerIds: ', err);
+  }
 });

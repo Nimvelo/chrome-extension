@@ -13,7 +13,7 @@ var notification_timeout = 5; // Minutes
 // Add listener for messages passed from the content.js script
 chrome.extension.onMessage.addListener(
   function(request, sender, sendResponse) {
-    if (request.number != null) { sendResponse(tryCall(request.number, request.numberHold)); }
+    if (request.number != null) { sendResponse(tryCall(request.number, request.numberHold, request.callerId)); }
     if (request.sms != null) { sendResponse(sendSMS(request.sms, request.message, request.from)); }
     if (request.clickableEnabled != null) { sendResponse(clickableEnabled()); }
     if (request.connectStream != null) { attempts = 0; setupNotifications(); }
@@ -391,7 +391,7 @@ function sendSMS(number, message, from) {
 
 }
 
-function tryCall(number, numberHold) {
+function tryCall(number, numberHold, callerId) {
 
   log('makeCall - Number: ' + number);
   log('[SCCE] Call number. Number: ' + number);
@@ -401,7 +401,7 @@ function tryCall(number, numberHold) {
   }
 
   var realNumber = fixNumber(number);
-  return makeCall(realNumber);
+  return makeCall(realNumber, callerId);
 }
 
 function fixNumber(number) {
@@ -409,7 +409,7 @@ function fixNumber(number) {
   return number.replace(/(?:\+44|\(|\)|-|\s)/g, "");
 }
 
-function makeCall(number) {
+function makeCall(number, callerId) {
 
   var endpoint = localStorage[localStorage['loginUsername'] + '_prefMainExtension'];
   var username = localStorage["loginUsername"];
@@ -422,7 +422,8 @@ function makeCall(number) {
   xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xmlhttp.send(JSON.stringify({   type: "call",
                                   endpoint: endpoint,
-                                  to: number
+                                  to: number,
+                                  callerId: callerId,
                               }));
 
   var status = xmlhttp.status;
