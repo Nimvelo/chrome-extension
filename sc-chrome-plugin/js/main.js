@@ -836,21 +836,22 @@ function getOutgoingNumbers(type) {
 
         localStorage[localStorage['loginUsername'] + '_outgoingCallerIds'] = JSON.stringify(obj.items);
 
-        for (var item in obj.items) {
-          var label = obj.items[item].number;
-          var value = obj.items[item].number;
+        for (var i in obj.items) {
+          const itemObj = obj.items[i];
+          var label = itemObj.number;
+          var value = itemObj.number;
 
-          if (obj.items[item].allowCalls == true) {
+          if (itemObj.allowCalls == true) {
             allowCalls.push({label: label, value: value, category: "Numbers"});
 
-            var newItem = $("<option></option>").attr("value",item['uri']).text(label);
+            var newItem = $("<option></option>").attr("value",itemObj['uri']).text(label);
 
-            if (obj.items[item].uri == localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId']) {
+            if (itemObj.uri == localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId']) {
               newItem.attr("selected", "selected");
             }
             $('#callerIdPicker').append(newItem);
 
-          } else if (obj.items[item].allowSms == true) {
+          } else if (itemObj.allowSms == true) {
             allowSMS.push({label: label, value: value, category: "SMS Enabled"});
           }
         }

@@ -423,7 +423,7 @@ function makeCall(number, callerId) {
   xmlhttp.send(JSON.stringify({   type: "call",
                                   endpoint: endpoint,
                                   to: number,
-                                  from: callerId,
+                                  callerId: callerId,
                               }));
 
   var status = xmlhttp.status;
