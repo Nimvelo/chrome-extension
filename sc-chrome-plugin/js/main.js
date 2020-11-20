@@ -174,7 +174,8 @@ function showSettings(settings) {
   if ( localStorage[localStorage['loginUsername'] + '_prefSmsNotify'] == null ) {
     localStorage[localStorage['loginUsername'] + '_prefSmsNotify'] = 1;
   }
-
+  // Get all customers on account
+  getCustomers();
   // Get all extensions on account
   getExtensions();
   // Get account infomation like company name etc
@@ -218,6 +219,10 @@ function hide() {
 
 // Gets settings from local storage and displays the values back to the user in the settings block
 function restoreSettings() {
+  // Set the current customer if one is set
+  if ( localStorage[localStorage['loginUsername'] + '_prefMainCustomer'] != null) {
+  	$("select option[value='" + localStorage[localStorage['loginUsername'] + '_prefMainCustomer'] + "']").attr("selected","selected");
+  }
   // Set the current extension if one is set
   if ( localStorage[localStorage['loginUsername'] + '_prefMainExtension'] != null) {
   	$("select option[value='" + localStorage[localStorage['loginUsername'] + '_prefMainExtension'] + "']").attr("selected","selected");
@@ -248,11 +253,14 @@ function saveSettings() {
   // User must set an extension before they can save.
 	if ( $('#extensions').val() != "notset" ) {
     var extension = $('#extensions').val();
-
+    
+    var customerId = $('#customers').val();
     var shortNumber = localStorage[localStorage['loginUsername'] + '_' + $('#extensions').val()];
 
     var selectedExtension = JSON.parse(localStorage[localStorage['loginUsername'] + '_localExtensions']).find(x => x.value === shortNumber);
-
+    
+    localStorage[localStorage['loginUsername'] + '_prefMainCustomer'] = customerId;
+   
     localStorage[localStorage['loginUsername'] + '_prefMainExtension'] = extension;
     localStorage[localStorage['loginUsername'] + '_prefMainExtensionShort'] = shortNumber;
     localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId'] = selectedExtension.defaultCallerId;
@@ -293,9 +301,10 @@ function login() {
         console.log(xmlhttp.getAllResponseHeaders())
         // If we get a 200 that means the credentials are correct
         if (xmlhttp.status === 200) {
-
           // So we save the username and password as they are correct
           storeLogin(username, password);
+          // set default customer as /me
+          localStorage[username + '_prefMainCustomer'] = 'me';
 
           // Get background page to connect to stream
           notifyConnect();
@@ -485,7 +494,7 @@ function dial() {
 }
 
 // Lets get all extensions the user can set
-function getExtensions() {
+function getExtensions(customerId = getCustomerId()) {
   // Set up a new array to store the extensions
   var localExtensions = [];
 
@@ -494,7 +503,7 @@ function getExtensions() {
   // Add the default "Extension" option
   $('#extensions').append($("<option></option>").attr("value","notset").text("Extension"));
 
-  var handle = new Request("/customers/me/endpoints");
+  var handle = new Request("/customers/"+customerId+"/endpoints");
 
   handle.params['type'] = "Phone";
   handle.pageSize(200);
@@ -532,6 +541,55 @@ function getExtensions() {
   return false;
 }
 
+// Lets get all customers the user can set
+// limited to first 200 results
+function getCustomers() {
+  // Set up a new array to store the extensions
+  var localCustomers = [];
+
+  // Remove any existing options
+  $('#customers').find('option').remove();
+  // Add the default "Extension" option
+  $('#customers').append($("<option></option>").attr("value","me").text("Default Customer"));
+
+  var handle = new Request("/customers");
+  handle.success(function(response, status){
+    for (i in response['items']) {
+      var item = response['items'][i];
+
+      label = item['company'];
+      if (item['partnerCompany']) {
+        label += ' - ' + item['partnerCompany'];
+      }
+      value = item['id'];
+      localCustomers.push({label: label, value: value, category: "Customers"});
+
+      localStorage[localStorage['loginUsername'] + '_' + item['uri']] = item['id'];
+
+        var newItem = $("<option></option>").attr("value",item['id']).text(label);
+	      if (item['id'] == localStorage[localStorage['loginUsername'] + '_prefMainCustomer']) {
+          newItem.attr("selected", "selected");
+        }
+        $('#customers').append(newItem);
+      }
+
+    localStorage[localStorage['loginUsername'] + '_localCustomers'] = JSON.stringify(localCustomers);
+  });
+
+  handle.go();
+
+  return false;
+}
+// when customer if selected in dropdown, update extension list
+function changeCustomer(e){
+    var customerId = e.target.value;
+    getExtensions(customerId);
+}
+// helper function for getting customer id from localstorage
+function getCustomerId(){
+  return localStorage[localStorage['loginUsername'] + '_prefMainCustomer'];
+}
+
 function displayRecent() {
   console.log('Display recent');
   getRecent();
@@ -539,7 +597,7 @@ function displayRecent() {
 
 function getRecent() {
 
-  var handle = new Request("/customers/me/calls");
+  var handle = new Request("/customers/"+getCustomerId()+"/calls");
 
   handle.pageSize(200);
   handle.params['includeLocal'] = true;
@@ -607,7 +665,7 @@ function getRecent() {
 
 function getCredit() {
   var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", localStorage['baseURL'] + '/customers/me/creditstatus', false);
+  xmlhttp.open("GET", localStorage['baseURL'] + '/customers/'+getCustomerId()+'/creditstatus', false);
   var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
   xmlhttp.setRequestHeader('Authorization', 'Basic ' + auth);
   xmlhttp.onreadystatechange=function() {
@@ -641,7 +699,7 @@ function getSMSMessages() {
 
   smsMessages = [];
 
-  url = localStorage['baseURL'] + '/customers/me/sms?pageSize=200&page=1';
+  url = localStorage['baseURL'] + '/customers/'+getCustomerId()+'/sms?pageSize=200&page=1';
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.open("GET", url, false);
   var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
@@ -823,7 +881,7 @@ function getOutgoingNumbers(type) {
   var allowSMS = [];
 
   var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", localStorage['baseURL'] + '/customers/me/outgoingcallerids?pageSize=200', false);
+  xmlhttp.open("GET", localStorage['baseURL'] + '/customers/'+getCustomerId()+'/outgoingcallerids?pageSize=200', false);
   var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
   xmlhttp.setRequestHeader('Authorization', 'Basic ' + auth);
   xmlhttp.onreadystatechange=function() {
@@ -1034,7 +1092,7 @@ function getContacts(force, callback) {
       }
     }, 2000);
     contacts = [];
-    url = localStorage['baseURL'] + "/customers/me/phonebook?pageSize=200&page=1";
+    url = localStorage['baseURL'] + "/customers/"+getCustomerId()+"/phonebook?pageSize=200&page=1";
     getContactsPage(url);
     storeContacts();
   }
@@ -1270,7 +1328,7 @@ function editContact(method, uri) {
   var speedDialRaw = $('#contactEditSpeedDial').val();
 
   if (method == "POST") {
-    uri = localStorage['baseURL'] + '/customers/me/phonebook';
+    uri = localStorage['baseURL'] + '/customers/'+getCustomerId()+'/phonebook';
   }
 
   if (speedDialRaw != null) {
@@ -1413,7 +1471,7 @@ function autoUpdateOff() {
 }
 
 function getInfo() {
-  var endpoint = localStorage['baseURL'] + '/customers/me/';
+  var endpoint = localStorage['baseURL'] + '/customers/'+getCustomerId();
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.open("GET", endpoint, false);
   var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
@@ -1478,6 +1536,7 @@ $(document).ready(function() {
   $('#showNotifySettings').click(notifyModal);
   $('#showPoppingSettings').click(poppingModal);
   $('#helpLink').click(openHelp);
+  $('#customers').change(changeCustomer);
 
   // Welcome screen listeners
   $('#welcomeNext').click(showLogin);

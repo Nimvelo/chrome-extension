@@ -349,7 +349,8 @@ function sendSMS(number, message, from) {
   log('[SCCE] Send SMS. Number: ' + number + ' From: ' + from + ' Message: ' + message);
 
   var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("POST", localStorage['baseURL'] + "/customers/me/sms", false);
+  var customerId = localStorage[localStorage['loginUsername'] + '_prefMainCustomer']; 
+  xmlhttp.open("POST", localStorage['baseURL'] + "/customers/"+customerId+"/sms", false);
   var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
   xmlhttp.setRequestHeader('Authorization', 'Basic ' + auth);
   xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -416,7 +417,8 @@ function makeCall(number, callerId) {
   var password = localStorage["loginPassword"];
 
   var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("POST", localStorage['baseURL'] + "/customers/me/calls", false);
+  var customerId = localStorage[localStorage['loginUsername'] + '_prefMainCustomer']; 
+  xmlhttp.open("POST", localStorage['baseURL'] + "/customers/"+customerId+"/calls", false);
   var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
   xmlhttp.setRequestHeader('Authorization', 'Basic ' + auth);
   xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
