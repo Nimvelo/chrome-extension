@@ -95,19 +95,6 @@ function setupNotifications() {
   username = localStorage['loginUsername'];
   password = localStorage['loginPassword'];
 
-  // check authentication on first connection attempt
-  if (attempts == 0) {
-    checkAuth((err) => {
-      if (err) {
-      streamSuspended = true;
-      spawnNotification(
-        'Authentication failed',
-        "Can't connect to notifications server. Login to reconnect."
-      )
-      }
-    })
-  }
-
   try {
     socket.unsubscribe();
   } catch (e) {
@@ -115,6 +102,18 @@ function setupNotifications() {
   }
 
   if (localStorage['loginValid'] == "true") {
+    // check authentication on first connection attempt
+    if (attempts == 0) {
+      checkAuth((err) => {
+        if (err) {
+        streamSuspended = true;
+        spawnNotification(
+          'Authentication failed',
+          "Can't connect to notifications server. Login to reconnect."
+        )
+        }
+      })
+    }
 
     streamSuspended = false;
     var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
