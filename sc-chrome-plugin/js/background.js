@@ -31,6 +31,65 @@ function getRandomArbitary (min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/**
+ * 
+ * @param {(err: boolean) => void} callback 
+ */
+function checkAuth(callback) {
+  log('[SCCE] Checking auth...')
+  // check authentication
+  var authUrl = localStorage["baseURL"] + "/customers/me";
+  var authReq = new XMLHttpRequest();
+  // This opens the request with username and password
+  authReq.open("HEAD", authUrl, false);
+  var auth = window.btoa(localStorage['loginUsername'] + ":" + localStorage['loginPassword']);
+  authReq.setRequestHeader('Authorization', 'Basic ' + auth)
+  // We wait untill something happens
+  authReq.onreadystatechange = function () {
+    if (authReq.readyState == 4) {
+      // If we get a 200 that means the credentials are correct
+      if (authReq.status === 200) {
+        callback(false);
+      } else {
+        // authentication failed - force relogin on next launch
+        localStorage['loginValid'] = null;
+        localStorage['loginPassword'] = null;
+        log('[SCCE] Auth failed... suspending stream')
+        callback(true);
+      }
+    }
+  };
+  authReq.send(null);
+}
+
+/**
+ * @param {string} title
+ * @param {string} body
+ * @param {function?} onClick 
+ */
+function spawnNotification(title, body, onClick) {
+  function notify() {
+    var notification = new Notification(title, {
+      body: body,
+      image: chrome.runtime.getURL("images/icon48.png"),
+      requireInteraction: !!onClick,
+    });
+    notification.onclick = onClick
+  }
+
+  if (("Notification" in window)) {
+    // Let's check whether notification permissions have already been granted
+    if (Notification.permission === "granted") { notify(); }
+    // Otherwise, we need to ask the user for permission
+    else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(function (permission) {
+        // If the user accepts, let's create a notification
+        if (permission === "granted") { notify(); }
+      });
+    }
+  }
+}
+
 function setupNotifications() {
 
   username = localStorage['loginUsername'];
@@ -43,6 +102,18 @@ function setupNotifications() {
   }
 
   if (localStorage['loginValid'] == "true") {
+    // check authentication on first connection attempt
+    if (attempts == 0) {
+      checkAuth((err) => {
+        if (err) {
+        streamSuspended = true;
+        spawnNotification(
+          'Authentication failed',
+          "Can't connect to notifications server. Login to reconnect."
+        )
+        }
+      })
+    }
 
     streamSuspended = false;
     var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
@@ -72,24 +143,18 @@ function setupNotifications() {
       log('[SCCE] Stream has dried up. (Error)');
       localStorage[localStorage['loginUsername'] + '_notificationConnection'] = false;
 
-      if (response.status == '401') {
-	// authentication failed - don't bother retrying
-        streamSuspended = true;
-      } else if (attempts < 5) {
+      if (attempts < 5) {
         log('[SCCE] Going to reconnect in 20 secconds. Try: ' + attempts)
         attempts += 1;
         setTimeout(function(){ if (!streamSuspended) {setupNotifications()}; },20000);
       } else if (!streamSuspended) {
         log('[SCCE] Max attempts reached.');
-        var errorNotification = webkitNotifications.createNotification('images/icon48.png', 'Connection Error', "Can't connect to the notifications server. Click here to reconnect.");
+        spawnNotification(
+          "Connection Error",
+          "Can't connect to the notifications server. Click here to reconnect.",
+          function(){ attempts = 0; setupNotifications(); }
+        );
         streamSuspended = true;
-        errorNotification.onclick = function(){
-          attempts = 0;
-          errorNotification.cancel();
-          setupNotifications();
-        }
-
-        errorNotification.show();
       }
     };
 

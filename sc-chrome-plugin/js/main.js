@@ -1638,17 +1638,40 @@ $(document).ready(function() {
   // Check if there is a logged in or show welcome
   if ( localStorage['loginUsername'] == null ) {
     showWelcome();
+    $('#splashScreen').hide();
   } else if ( localStorage["loginValid"] != 'true' ) {
     showLogin();
+    $('#splashScreen').hide();
   } else {
-    if ( localStorage[localStorage['loginUsername'] + '_loginSetup'] == 'done' ) {
-      showDialer();
-    } else {
-      // If the user has not completed the setup take them back to the settings page
-      showSettings();
-      // Hide menu prevents users from clicking off the page
-      hideMenu();
+    hideMenu();
+    var authUrl = localStorage['baseURL'] + '/customers/me';
+    var checkAuth = new XMLHttpRequest();
+    // This opens the request with username and password
+    checkAuth.open("HEAD", authUrl, false);
+    var auth = window.btoa(localStorage['loginUsername'] + ":" + localStorage['loginPassword']);
+    checkAuth.setRequestHeader('Authorization', 'Basic ' + auth);
+    checkAuth.onreadystatechange=function() {
+      if (checkAuth.readyState==4) {
+        $('#splashScreen').hide();
+        if (checkAuth.status === 200) {
+          if ( localStorage[localStorage['loginUsername'] + '_loginSetup'] == 'done' ) {
+            showDialer();
+          } else {
+            // If the user has not completed the setup take them back to the settings page
+            showSettings();
+            // Hide menu prevents users from clicking off the page
+            hideMenu();
+          }
+        } else {
+          // invalid auth
+          localStorage['loginValid'] = null;
+          localStorage['loginPassword'] = null;
+          showLogin();
+        }
+      }
     }
+    // This sends the actual request to the server, but we are not posting any data so we send null
+    checkAuth.send(null);
   }
 
 });
