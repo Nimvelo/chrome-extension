@@ -200,6 +200,7 @@ function (str, key, value) {
 
 // This function hides eveything, ready for new blocks to be displayed
 function hide() {
+  $('#splashScreen').hide();
   $('#blockLogin').hide();
   $('#blockSettings').hide();
   $('#blockDialer').hide();
@@ -303,15 +304,18 @@ function login() {
         if (xmlhttp.status === 200) {
           // So we save the username and password as they are correct
           storeLogin(username, password);
-          // set default customer as /me
-          localStorage[username + '_prefMainCustomer'] = 'me';
+          // set default customer as /me if it has not been set
+          if (!localStorage[username + '_prefMainCustomer']) {
+            localStorage[username + '_prefMainCustomer'] = 'me';
+          }
 
           // Get background page to connect to stream
           notifyConnect();
 
           // If they have completed the inital setup for that user we take them directly to the dialer block
           if ( localStorage[localStorage['loginUsername'] + "_loginSetup"] == "done") {
-            showDialer();
+            // revalidate extensions before showing dialer
+            getExtensions(getCustomerId(), showDialer);
             getContacts(1);
           } else {
             // If they have not we force them to setup their settings
@@ -493,8 +497,12 @@ function dial() {
   return false;
 }
 
-// Lets get all extensions the user can set
-function getExtensions(customerId = getCustomerId()) {
+/**
+ * Lets get all extensions the user can set
+ * @param {string?} customerId
+ * @param {Function?} cb runs after extensions have been fetched
+ */
+function getExtensions(customerId = getCustomerId(), cb = function(){}) {
   // Set up a new array to store the extensions
   var localExtensions = [];
 
@@ -525,15 +533,18 @@ function getExtensions(customerId = getCustomerId()) {
 
       if (!item['readOnly']) {
         var newItem = $("<option></option>").attr("value",item['uri']).text(item['shortNumber'] + " - " + item['name']);
-	if (item['uri'] == localStorage[localStorage['loginUsername'] + '_prefMainExtension']) {
+	      if (item['uri'] == localStorage[localStorage['loginUsername'] + '_prefMainExtension']) {
           newItem.attr("selected", "selected");
+          // update selected extension properties
+          localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId'] = item['defaultCallerId'];
+          localStorage[localStorage['loginUsername'] + '_prefMainExtensionShort'] = item['shortNumber'];
         }
         $('#extensions').append(newItem);
       }
     }
 
     localStorage[localStorage['loginUsername'] + '_localExtensions'] = JSON.stringify(localExtensions);
-
+    cb();
   });
 
   handle.go();
@@ -892,6 +903,9 @@ function getOutgoingNumbers(type) {
          // Remove any existing options
         $('#callerIdPicker').find('option').remove();
 
+        // Add Anonymous option to the start
+        var anonymousCLI = $("<option></option>").attr("value","").text("Anonymous").attr("selected", "selected");
+        $('#callerIdPicker').append(anonymousCLI);
         localStorage[localStorage['loginUsername'] + '_outgoingCallerIds'] = JSON.stringify(obj.items);
 
         for (var i in obj.items) {
@@ -906,6 +920,8 @@ function getOutgoingNumbers(type) {
 
             if (itemObj.uri == localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId']) {
               newItem.attr("selected", "selected");
+              // deselect anonymous as we have a default cli
+              anonymousCLI.attr("selected", null);
             }
             $('#callerIdPicker').append(newItem);
           }
@@ -1636,12 +1652,11 @@ $(document).ready(function() {
 
   // Setup is done...
   // Check if there is a logged in or show welcome
+  $('#splashScreen').show();
   if ( localStorage['loginUsername'] == null ) {
     showWelcome();
-    $('#splashScreen').hide();
   } else if ( localStorage["loginValid"] != 'true' ) {
     showLogin();
-    $('#splashScreen').hide();
   } else {
     hideMenu();
     var authUrl = localStorage['baseURL'] + '/customers/me';
@@ -1652,10 +1667,10 @@ $(document).ready(function() {
     checkAuth.setRequestHeader('Authorization', 'Basic ' + auth);
     checkAuth.onreadystatechange=function() {
       if (checkAuth.readyState==4) {
-        $('#splashScreen').hide();
         if (checkAuth.status === 200) {
           if ( localStorage[localStorage['loginUsername'] + '_loginSetup'] == 'done' ) {
-            showDialer();
+            // revalidate extensions before showing dialer
+            getExtensions(getCustomerId(), showDialer);
           } else {
             // If the user has not completed the setup take them back to the settings page
             showSettings();

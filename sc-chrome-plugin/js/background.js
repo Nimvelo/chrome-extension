@@ -487,11 +487,15 @@ function makeCall(number, callerId) {
   var auth = window.btoa(localStorage["loginUsername"] + ":" + localStorage["loginPassword"]);
   xmlhttp.setRequestHeader('Authorization', 'Basic ' + auth);
   xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xmlhttp.send(JSON.stringify({   type: "call",
-                                  endpoint: endpoint,
-                                  to: number,
-                                  callerId: callerId,
-                              }));
+  var requestBody = {
+    type: "call",
+    endpoint: endpoint,
+    to: number,
+  }
+  if (callerId) {
+    requestBody.callerId = callerId;
+  }
+  xmlhttp.send(JSON.stringify(requestBody));
 
   var status = xmlhttp.status;
 
