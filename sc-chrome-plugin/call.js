@@ -104,6 +104,8 @@ $(document).ready(function() {
   try {
     var outgoingCallerIds = localStorage[localStorage['loginUsername'] + '_outgoingCallerIds'];
 
+    var anonymousCLI = $("<option></option>").attr("value","").text("Anonymous").attr("selected", "selected");
+    $('#callerIdPicker').append(anonymousCLI);
     JSON.parse(outgoingCallerIds).forEach((outgoingCallerId) => {
       if (!outgoingCallerId.allowCalls) return;
 
@@ -111,6 +113,8 @@ $(document).ready(function() {
 
       if (outgoingCallerId.uri == localStorage[localStorage['loginUsername'] + '_prefMainExtensionDefaultCallerId']) {
         newItem.attr("selected", "selected");
+        // deselect anonymous as we have a default cli
+        anonymousCLI.attr("selected", null)
       }
       $('#callerIdPicker').append(newItem);
     });
